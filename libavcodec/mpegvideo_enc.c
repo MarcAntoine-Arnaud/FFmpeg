@@ -355,6 +355,7 @@ av_cold int ff_MPV_encode_init(AVCodecContext *avctx)
         av_log(avctx, AV_LOG_ERROR, "intra dc precision too large\n");
         return AVERROR(EINVAL);
     }
+    s->top_field_first = (s->avctx->field_order == AV_FIELD_TT);
     s->user_specified_pts = AV_NOPTS_VALUE;
 
     if (s->gop_size <= 1) {
