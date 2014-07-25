@@ -136,6 +136,7 @@ typedef struct {
     int intra_only;
     uint64_t sample_count;
     int64_t original_duration; /* st->duration in SampleRate/EditRate units */
+    int64_t origin;
 } MXFTrack;
 
 typedef struct {
@@ -690,6 +691,10 @@ static int mxf_read_track(void *arg, AVIOContext *pb, int tag, int size, UID uid
     switch(tag) {
     case 0x4801:
         track->track_id = avio_rb32(pb);
+        break;
+    case 0x4b02:
+	avio_rb32(pb);
+        track->origin = avio_rb32(pb);
         break;
     case 0x4804:
         avio_read(pb, track->track_number, 4);
@@ -1556,6 +1561,17 @@ static int mxf_parse_structural_metadata(MXFContext *mxf)
                 av_log(mxf->fc, AV_LOG_VERBOSE, ".");
         }
         av_log(mxf->fc, AV_LOG_VERBOSE, "\n");
+
+        if (material_track->origin) {
+            char material_origin[3];
+            snprintf( material_origin, sizeof(material_origin), "%d", (int)material_track->origin);
+            av_dict_set(&st->metadata, "material_track_origin", material_origin, 0);
+        }
+        if (source_track->origin) {
+            char source_origin[3];
+            snprintf( source_origin, sizeof(source_origin), "%d", (int)source_track->origin);
+            av_dict_set(&st->metadata, "source_track_origin", source_origin, 0);
+        }
 
         if (st->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
             source_track->intra_only = mxf_is_intra_only(descriptor);
